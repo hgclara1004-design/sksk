@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>English Word Match Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .game-container {
+      background: #ffffff;
+      max-width: 500px;
+      width: 90%;
+      padding: 20px 24px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+    h1 {
+      font-size: 22px;
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      font-size: 13px;
+      text-align: center;
+      color: #666;
+      margin-bottom: 18px;
+    }
+    #score {
+      font-size: 14px;
+      text-align: right;
+      margin-bottom: 10px;
+    }
+    #word {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: center;
+      margin: 16px 0;
+    }
+    .choices {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    button.choice {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #d0d4ff;
+      background: #eef0ff;
+      cursor: pointer;
+      font-size: 14px;
+      text-align: left;
+      transition: transform 0.05s ease, box-shadow 0.1s ease, background 0.1s ease;
+    }
+    button.choice:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    }
+    #message {
+      height: 20px;
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    #nextBtn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      background: #4f6df5;
+      color: white;
+      font-size: 15px;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    #nextBtn:disabled {
+      background: #b7c2ff;
+      cursor: default;
+    }
+    .small-note {
+      font-size: 12px;
+      text-align: center;
+      color: #777;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>English Word Match Game</h1>
+    <p class="subtitle">
+      Choose the correct Korean meaning for each English word.
+    </p>
+    <div id="score">Score: 0 / 0</div>
+    <div id="word">Press "Next" to start!</div>
+    <div class="choices" id="choices"></div>
+    <div id="message"></div>
+    <button id="nextBtn">Next</button>
+    <p class="small-note">
+      This app was created for English learning with Vibe Coding.
+    </p>
+  </div>
+
+  <script>
+    // word list: you can add more later
+    const words = [
+      { word: "resilience", meaning: "어려움을 이겨내는 힘" },
+      { word: "effort", meaning: "노력" },
+      { word: "discipline", meaning: "규율, 자기 관리" },
+      { word: "practice", meaning: "연습" },
+      { word: "achievement", meaning: "성취, 업적" },
+      { word: "improvement", meaning: "향상, 발전" },
+      { word: "patience", meaning: "인내심" },
+      { word: "focus", meaning: "집중" },
+      { word: "goal", meaning: "목표" },
+      { word: "habit", meaning: "습관" }
+    ];
+
+    let currentWord = null;
+    let usedIndexes = [];
+    let score = 0;
+    let total = 0;
+    const wordEl = document.getElementById("word");
+    const choicesEl = document.getElementById("choices");
+    const messageEl = document.getElementById("message");
+    const scoreEl = document.getElementById("score");
+    const nextBtn = document.getElementById("nextBtn");
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function getRandomIndexes(exceptIndex, count) {
+      const indexes = [];
+      while (indexes.length < count) {
+        const idx = Math.floor(Math.random() * words.length);
+        if (idx !== exceptIndex && !indexes.includes(idx)) {
+          indexes.push(idx);
+        }
+      }
+      return indexes;
+    }
+
+    function updateScore() {
+      scoreEl.textContent = `Score: ${score} / ${total}`;
+    }
+
+    function loadQuestion() {
+      // reset styles
+      messageEl.textContent = "";
+      choicesEl.innerHTML = "";
+
+      if (usedIndexes.length === words.length) {
+        usedIndexes = []; // reset for replay
+      }
+
+      let wordIndex;
+      do {
+        wordIndex = Math.floor(Math.random() * words.length);
+      } while (usedIndexes.includes(wordIndex));
+      usedIndexes.push(wordIndex);
+
+      currentWord = words[wordIndex];
+      wordEl.textContent = currentWord.word;
+
+      const wrongIndexes = getRandomIndexes(wordIndex, 2);
+      const options = [
+        { text: currentWord.meaning, correct: true },
+        { text: words[wrongIndexes[0]].meaning, correct: false },
+        { text: words[wrongIndexes[1]].meaning, correct: false }
+      ];
+
+      shuffle(options).forEach(option => {
+        const btn = document.createElement("button");
+        btn.className = "choice";
+        btn.textContent = option.text;
+        btn.onclick = () => handleAnswer(btn, option.correct);
+        choicesEl.appendChild(btn);
+      });
+
+      nextBtn.disabled = true;
+    }
+
+    function handleAnswer(button, isCorrect) {
+      // prevent multiple answers
+      const allButtons = document.querySelectorAll(".choice");
+      allButtons.forEach(b => b.disabled = true);
+
+      total++;
+      if (isCorrect) {
+        score++;
+        messageEl.textContent = "✅ Correct! Great job!";
+        button.style.background = "#c9f7c5";
+      } else {
+        messageEl.textContent = `❌ Oops! The correct answer was: "${currentWord.meaning}"`;
+        button.style.background = "#ffd4d4";
+      }
+      updateScore();
+      nextBtn.disabled = false;
+    }
+
+    nextBtn.addEventListener("click", () => {
+      loadQuestion();
+    });
+  </script>
+</body>
+</html>
